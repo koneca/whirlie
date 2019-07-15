@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager
+#include <LiquidCrystal_I2C.h>
 
 //SW Version
 #define SWNAME "Whirlie-Control"
@@ -36,7 +37,7 @@ float Temperature;
 void HandleForm(WiFiClient client);
 void HandleSensors();
 void HandleBrowserIO();
-WiFiServer server(80);
+
 
 /* ----------------------------------- ----------------------------------- */
 int
@@ -44,3 +45,11 @@ InitializeData();
 
 int
 SetupPorts();
+
+void
+InitializeDisplay();
+
+void
+ShowWaterTemp(
+    const float             Temperature
+    );

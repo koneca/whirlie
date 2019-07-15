@@ -1,5 +1,8 @@
 #include "whirlie.h"
 
+LiquidCrystal_I2C   Lcd(0x27,20,4);
+WiFiServer          Server(80);
+
 void setup()
 {
     Serial.begin(115200);
@@ -9,7 +12,6 @@ void setup()
     Serial.print(" ");
     Serial.println(VERSION);
     Serial.print("Setting soft-AP ... ");
-
     WiFiManager wifiManager;
 
     if(0 == wifiManager.autoConnect("WhirlpoolAP"))
@@ -17,7 +19,11 @@ void setup()
         Serial.println("Ready");
     }
 
-    server.begin();
+    Server.begin();
+
+    Serial.println("Statring Display");
+    InitializeDisplay();
+    Serial.println("Display started");
 
     SetupPorts();
     InitializeData();
@@ -26,18 +32,22 @@ void setup()
 /* ------------------------------- Main loop ------------------------------- */
 void loop()
 {
-    WiFiClient client = server.available();
+    WiFiClient Client = Server.available();
 
-    if (client)
+   ShowWaterTemp(Temperature);
+
+    if (Client)
     {
         Serial.println("New Client.");
         String currentLine = ""; // erstelle einen String mit den eingehenden Daten vom Client
-        while (client.connected())
+        while (Client.connected())
         {
+           ShowWaterTemp(Temperature);
+            
             // wiederholen so lange der Client verbunden ist
-            if (client.available())
+            if (Client.available())
             {                           // Fall ein Byte zum lesen da ist,
-                char c = client.read(); // lese das Byte, und dann
+                char c = Client.read(); // lese das Byte, und dann
                 Serial.write(c);        // gebe es auf dem seriellen Monitor aus
                 header += c;
                 if (c == '\n')
@@ -48,7 +58,7 @@ void loop()
                     {
                         HandleSensors();
                         HandleBrowserIO();
-                        HandleForm(client);
+                        HandleForm(Client);
                         // und wir verlassen mit einem break die Schleife
                         break;
                     }
@@ -66,7 +76,7 @@ void loop()
         // Die Header-Variable für den nächsten Durchlauf löschen
         header = "";
         // Die Verbindung schließen
-        client.stop();
+        Client.stop();
         Serial.println("Client getrennt.");
         Serial.println("");
     }
@@ -139,6 +149,14 @@ void HandleBrowserIO()
 }
 
 /* ----------------------------------- ----------------------------------- */
+void StoreTargetTemp(
+    const float             Temp             
+)
+{
+
+}
+
+/* ----------------------------------- ----------------------------------- */
 void HandleSensors()
 {
     Serial.println("2222222");
@@ -150,10 +168,13 @@ void HandleSensors()
     Serial.println(AnalogVolts);
     Temperature = (AnalogVolts)*100; //converting from 10 mv per degree wit 500 mV offset
                                      //to degrees ((voltage - 500mV) times 100)
+
 }
 
 /* ----------------------------------- ----------------------------------- */
-void HandleForm(WiFiClient client)
+void HandleForm(
+    WiFiClient              client
+    )
 {
     // HTTP-Header fangen immer mit einem Response-Code an (z.B. HTTP/1.1 200 OK)
     // gefolgt vom Content-Type damit der Client weiss was folgt, gefolgt von einer Leerzeile:
@@ -182,11 +203,13 @@ void HandleForm(WiFiClient client)
     client.print(VERSION);
     client.println("</h1>");
 
-    client.print("<h2>Watertemperature:");
+    client.print("<h2>Water Temp.:");
     client.print(Temperature);
-    client.println("</h2>");
+    client.println(" (actual)</h2>");
 
-    client.println("<input type='range' name='VOLUME' min='0' max='30' value='15'>");
+    client.print("<p><h2>Desired temp.:");
+    client.print("<input type='range' name='TEMPERATURE' min='20' max='40' value='15'>");
+    client.println("</p>");
 
     // Zeige den aktuellen Status, und AN/AUS Buttons for GPIO 5
     client.print("<p>Heating - State ");
@@ -248,3 +271,23 @@ void HandleForm(WiFiClient client)
     // Die HTTP-Antwort wird mit einer Leerzeile beendet
     client.println();
 }
+
+void
+ShowWaterTemp(
+    const float          Temperature
+    )
+{
+    Serial.print("actual Temp.: ");
+    Serial.print(Temperature);
+    Serial.print(0xDF);
+    Serial.println("C");
+
+    Lcd.setCursor(3,0);
+    Lcd.print("Water temp.:");
+    Lcd.setCursor(5,1);
+    Lcd.print(Temperature);
+    Lcd.setCursor(10,1);
+    Lcd.print(0xDF);
+    Lcd.print("C");
+}
+    

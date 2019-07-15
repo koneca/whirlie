@@ -31,3 +31,20 @@ SetupPorts()
   //  pinMode(Pump2Btn, INPUT);
   //  pinMode(AirBtn, INPUT);
 }
+
+void
+InitializeDisplay()
+{
+    Lcd.init();
+    Wire.begin(D2, D1);
+    Lcd.backlight();
+    Lcd.setCursor(2,0);
+    Lcd.print(SWNAME);
+    Lcd.setCursor(1,1);
+    Lcd.print("Version");
+    Lcd.setCursor(9,1);
+    Lcd.print(VERSION);
+    delay(2000);
+}
+
+
