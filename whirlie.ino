@@ -21,9 +21,9 @@ void setup()
 
     Server.begin();
 
-    Serial.println("Statring Display");
-    InitializeDisplay();
-    Serial.println("Display started");
+    // Serial.println("Statring Display");
+    // InitializeDisplay();
+    // Serial.println("Display started");
 
     SetupPorts();
     InitializeData();
@@ -34,7 +34,7 @@ void loop()
 {
     WiFiClient Client = Server.available();
 
-   ShowWaterTemp(Temperature);
+//    ShowWaterTemp(Temperature);
 
     if (Client)
     {
@@ -42,7 +42,7 @@ void loop()
         String currentLine = ""; // erstelle einen String mit den eingehenden Daten vom Client
         while (Client.connected())
         {
-           ShowWaterTemp(Temperature);
+        //    ShowWaterTemp(Temperature);
             
             // wiederholen so lange der Client verbunden ist
             if (Client.available())
@@ -80,71 +80,84 @@ void loop()
         Serial.println("Client getrennt.");
         Serial.println("");
     }
+    delay(1000);
 }
 
 /* ----------------------------------- ----------------------------------- */
 void HandleBrowserIO()
 {
     // Hier werden die GPIO Pins ein- oder ausgeschaltet
-    if (header.indexOf("GET /12/on") >= 0)
+    if (header.indexOf("GET /heat/on") >= 0)
     {
         Serial.println("Heating on");
         HeatingState = 1;
         digitalWrite(HEATING, HIGH);
     }
-    else if (header.indexOf("GET /12/off") >= 0)
+    else if (header.indexOf("GET /heat/off") >= 0)
     {
         Serial.println("Heating off");
         HeatingState = 0;
         digitalWrite(HEATING, LOW);
     }
-    else if (header.indexOf("GET /16/on") >= 0)
+    else if (header.indexOf("GET /air/on") >= 0)
     {
         Serial.println(" Air on");
         AirState = 1;
         digitalWrite(AIR, HIGH);
     }
-    else if (header.indexOf("GET /16/off") >= 0)
+    else if (header.indexOf("GET /air/off") >= 0)
     {
         Serial.println("Air off");
         AirState = 0;
         digitalWrite(AIR, LOW);
     }
-    else if (header.indexOf("GET /13/on") >= 0)
+    else if (header.indexOf("GET /lamp/on") >= 0)
     {
-        Serial.println(" Air on");
+        Serial.println(" Lamp on");
         LampState = 1;
         digitalWrite(LAMP, HIGH);
     }
-    else if (header.indexOf("GET /13/off") >= 0)
+    else if (header.indexOf("GET /lamp/off") >= 0)
     {
-        Serial.println("Air off");
+        Serial.println("Lamp off");
         LampState = 0;
         digitalWrite(LAMP, LOW);
     }
-    else if (header.indexOf("GET /14/on") >= 0)
+    else if (header.indexOf("GET /pump1/on") >= 0)
     {
         Serial.println(" Pump1 on");
         Pump1State = 1;
         digitalWrite(PUMP1, HIGH);
     }
-    else if (header.indexOf("GET /14/off") >= 0)
+    else if (header.indexOf("GET /pump1/off") >= 0)
     {
         Serial.println("Pump1 off");
         Pump1State = 0;
         digitalWrite(PUMP1, LOW);
     }
-    else if (header.indexOf("GET /15/on") >= 0)
+    else if (header.indexOf("GET /pump2/on") >= 0)
     {
         Serial.println(" Pump2 on");
         Pump2State = 1;
         digitalWrite(PUMP2, HIGH);
     }
-    else if (header.indexOf("GET /15/off") >= 0)
+    else if (header.indexOf("GET /pump2/off") >= 0)
     {
         Serial.println(" Pump2 off");
         Pump2State = 0;
         digitalWrite(PUMP2, LOW);
+    }
+     else if (header.indexOf("GET /filter/on") >= 0)
+    {
+        Serial.println(" Filter on");
+        FilterState = 1;
+        digitalWrite(FILTER, HIGH);
+    }
+    else if (header.indexOf("GET /filter/off") >= 0)
+    {
+        Serial.println(" filter off");
+        FilterState = 0;
+        digitalWrite(FILTER, LOW);
     }
 }
 
@@ -153,12 +166,17 @@ void StoreTargetTemp(
     const float             Temp             
 )
 {
-
+    EEPROM.begin(sizeof(float));
+    for (unsigned int t=0; t<sizeof(storage); t++)
+		EEPROM.write(PERMSTORE + t, *((char*)&storage + t));
+    EEPROM.end();
 }
 
 /* ----------------------------------- ----------------------------------- */
 void HandleSensors()
 {
+    unsigned int            t;
+
     Serial.println("2222222");
     double AnalogValue = analogRead(A0);
     // convert the analog signal to voltage
@@ -168,6 +186,8 @@ void HandleSensors()
     Serial.println(AnalogVolts);
     Temperature = (AnalogVolts)*100; //converting from 10 mv per degree wit 500 mV offset
                                      //to degrees ((voltage - 500mV) times 100)
+
+    StoreTargetTemp(Temperature);
 
 }
 
@@ -192,9 +212,11 @@ void HandleForm(
     // Es folgen der CSS-Code um die Ein/Aus Buttons zu gestalten
     // Hier können Sie die Hintergrundfarge (background-color) und Schriftgröße (font-size) anpassen
     client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
-    client.println(".button { background-color: #335544; border: none; color: white; padding: 16px 40px;");
-    client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
-    client.println(".button2 {background-color: #886677;}</style></head>");
+    client.println("div.table { display: table; width: auto; margin: auto; padding: 5px;}");
+    client.println("div.spalte { display: table-cell; border: none; width: 200px; padding: 5px; }");
+    client.println(".button { background-color: #b7263b ; color: white; padding: 16px 40px;");
+    client.println("text-decoration: none; font-size: 25px; margin: 2px; cursor: pointer;}");
+    client.println(".button2 {background-color:  #26b72c;}</style></head>");
 
     // Webseiten-Überschrift
     client.print("<body><h1>");
@@ -203,69 +225,82 @@ void HandleForm(
     client.print(VERSION);
     client.println("</h1>");
 
-    client.print("<h2>Water Temp.:");
+    client.print("<h3>Aktuelle Wassertemp.: ");
     client.print(Temperature);
-    client.println(" (actual)</h2>");
+    client.println(" &deg;C</h3>");
 
-    client.print("<p><h2>Desired temp.:");
+    client.print("<p><h3>Zieltemp.: &deg;C</h3>");
     client.print("<input type='range' name='TEMPERATURE' min='20' max='40' value='15'>");
     client.println("</p>");
 
-    // Zeige den aktuellen Status, und AN/AUS Buttons for GPIO 5
-    client.print("<p>Heating - State ");
-    client.print(HeatingState ? "ON" : "OFF");
-    client.println("</p>");
-    // wenn HeatingState = off, zeige den EIN Button
-    if (HeatingState == 0)
-    {
-        client.println("<p><a href=\"/12/on\"><button class=\"button\">EIN</button></a></p>");
-    }
-    else
-    {
-        client.println("<p><a href=\"/12/off\"><button class=\"button button2\">AUS</button></a></p>");
-    }
+    /* ------------------------------- Row 1 ------------------------------- */
+    client.println("<div class='table'>");
+    client.println("<div class='table-row'>");
+    client.println("<div class='spalte'>");
+        if (0 == FilterState)
+        {
+            client.println("<a href=\"/filter/on\"><button class=\"button\">Filter<br>EIN</button></a>");
+        }
+        else
+        {
+            client.println("<a href=\"/filter/off\"><button class=\"button button2\">Filter<br>AUS</button></a>");
+        }
+    client.print("</div><div class='spalte'>");
+        if (0 == Pump1State)
+        {
+            client.println("<p><a href=\"/pump1/on\"><button class=\"button\">Pumpe1<br>EIN</button></a></p>");
+        }
+        else
+        {
+            client.println("<p><a href=\"/pump1/off\"><button class=\"button button2\">Pumpe1<br>AUS</button></a></p>");
+        }
+    client.println("</div></div>");
 
-    // Das gleiche für Air
-    client.print("<p>Air - State ");
-    client.print(AirState ? "ON" : "OFF");
-    client.println("</p>");
-    // Wenn AirState = off, zeige den EIN Button
-    if (0 == AirState)
-    {
-        client.println("<p><a href=\"/16/on\"><button class=\"button\">EIN</button></a></p>");
-    }
-    else
-    {
-        client.println("<p><a href=\"/16/off\"><button class=\"button button2\">AUS</button></a></p>");
-    }
+    /* ------------------------------- Row 2 ------------------------------- */
+    client.print("<div class='table-row'>");
+    client.print("<div class='spalte'>");
+        if (0 == LampState)
+        {
+            client.println("<p><a href=\"/lamp/on\"><button class=\"button\">Licht<br>EIN</button></a></p>");
+        }
+        else
+        {
+            client.println("<p><a href=\"/lamp/off\"><button class=\"button button2\">Licht<br>AUS</button></a></p>");
+        }
+    client.print("</div><div class='spalte'>");
+        if (0 == Pump2State)
+        {
+            client.println("<p><a href=\"/pump2/on\"><button class=\"button\">Pumpe2<br>EIN</button></a></p>");
+        }
+        else
+        {
+            client.println("<p><a href=\"/pump2/off\"><button class=\"button button2\">Pumpe2<br>AUS</button></a></p>");
+        }
+    client.println("</div></div>");
 
-    // Das gleiche für Pump1
-    client.print("<p>Pump1 - State ");
-    client.print(Pump1State ? "ON" : "OFF");
-    client.println("</p>");
-    // Wenn Pump1State = off, zeige den EIN Button
-    if (0 == Pump1State)
-    {
-        client.println("<p><a href=\"/14/on\"><button class=\"button\">EIN</button></a></p>");
-    }
-    else
-    {
-        client.println("<p><a href=\"/14/off\"><button class=\"button button2\">AUS</button></a></p>");
-    }
+    /* ------------------------------- Row 3 ------------------------------- */
+    client.print("<div class='table-row'>");
+    client.print("<div class='spalte'>");
+        if (0 == AirState)
+        {
+            client.println("<p><a href=\"/air/on\"><button class=\"button\">Luft<br>EIN</button></a></p>");
+        }
+        else
+        {
+            client.println("<p><a href=\"/air/off\"><button class=\"button button2\">Luft<br>AUS</button></a></p>");
+        }
+    client.print("</div><div class='spalte'>");
+        if (HeatingState == 0)
+        {
+            client.println("<p><a href=\"/heat/on\"><button class=\"button\">Heizung<br>EIN</button></a></p>");
+        }
+        else
+        {
+            client.println("<p><a href=\"/heat/off\"><button class=\"button button2\">Heizung<br>AUS</button></a></p>");
+        }
+    client.println("</div></div>");
 
-    // Das gleiche für Pump2
-    client.print("<p>Pump2 - State ");
-    client.print(Pump2State ? "ON" : "OFF");
-    client.println("</p>");
-    // Wenn Pump2State = off, zeige den EIN Button
-    if (0 == Pump2State)
-    {
-        client.println("<p><a href=\"/15/on\"><button class=\"button\">EIN</button></a></p>");
-    }
-    else
-    {
-        client.println("<p><a href=\"/15/off\"><button class=\"button button2\">AUS</button></a></p>");
-    }
+    client.println("</div>");
     client.println("</body></html>");
 
     // Die HTTP-Antwort wird mit einer Leerzeile beendet
@@ -279,15 +314,14 @@ ShowWaterTemp(
 {
     Serial.print("actual Temp.: ");
     Serial.print(Temperature);
-    Serial.print(0xDF);
-    Serial.println("C");
+    Serial.println(" C");
 
     Lcd.setCursor(3,0);
     Lcd.print("Water temp.:");
     Lcd.setCursor(5,1);
     Lcd.print(Temperature);
     Lcd.setCursor(10,1);
-    Lcd.print(0xDF);
+    Lcd.print((char)223);
     Lcd.print("C");
 }
     
