@@ -1,6 +1,6 @@
 #include "whirlie.h"
 
-LiquidCrystal_I2C   Lcd(0x27,20,4);
+//LiquidCrystal_I2C   Lcd(0x27,20,4);
 WiFiServer          Server(80);
 
 void setup()
@@ -86,78 +86,65 @@ void loop()
 /* ----------------------------------- ----------------------------------- */
 void HandleBrowserIO()
 {
-    // Hier werden die GPIO Pins ein- oder ausgeschaltet
-    if (header.indexOf("GET /heat/on") >= 0)
+    bool                     SwitchOff = false;
+    unsigned int             DPort = 0;
+    bool                     PortSwitched = false;
+    char                     DebugBuffer[100];
+
+    if(0 <= header.indexOf("GET /"))
     {
-        Serial.println("Heating on");
-        HeatingState = 1;
-        digitalWrite(HEATING, HIGH);
+        Serial.println("got an get");
+        // switched off (off because "on" is too short)
+        if(0 <= header.indexOf("off"))
+        {
+            SwitchOff = true;
+        }
+
+        if (header.indexOf(TXT_HEATING) >= 0)
+        {
+            HeatingState = ! SwitchOff;
+            DPort = DHEATING;
+            PortSwitched = true;
+        }
+
+        else if (header.indexOf(TXT_LIGHT) >= 0)
+        {
+            LightState = ! SwitchOff;
+            DPort = DLAMP;
+            PortSwitched = true;
+        }
+        else if (header.indexOf(TXT_AIR) >= 0)
+        {
+            AirState = ! SwitchOff;
+            DPort = DAIR;
+            PortSwitched = true;
+        }
+        else if (header.indexOf(TXT_PUMP1) >= 0)
+        {
+            Pump1State = ! SwitchOff;
+            DPort = DPUMP1;
+            PortSwitched = true;
+        }
+        else if (header.indexOf(TXT_PUMP2) >= 0)
+        {
+            Pump2State = ! SwitchOff;
+            DPort = DPUMP2;
+            PortSwitched = true;
+        }
+        else if (header.indexOf(TXT_FILTER) >= 0)
+        {
+            FilterState = ! SwitchOff;
+            DPort = DFILTER;
+            PortSwitched = true;
+        }
     }
-    else if (header.indexOf("GET /heat/off") >= 0)
+
+    if(PortSwitched)
     {
-        Serial.println("Heating off");
-        HeatingState = 0;
-        digitalWrite(HEATING, LOW);
-    }
-    else if (header.indexOf("GET /air/on") >= 0)
-    {
-        Serial.println(" Air on");
-        AirState = 1;
-        digitalWrite(AIR, HIGH);
-    }
-    else if (header.indexOf("GET /air/off") >= 0)
-    {
-        Serial.println("Air off");
-        AirState = 0;
-        digitalWrite(AIR, LOW);
-    }
-    else if (header.indexOf("GET /lamp/on") >= 0)
-    {
-        Serial.println(" Lamp on");
-        LampState = 1;
-        digitalWrite(LAMP, HIGH);
-    }
-    else if (header.indexOf("GET /lamp/off") >= 0)
-    {
-        Serial.println("Lamp off");
-        LampState = 0;
-        digitalWrite(LAMP, LOW);
-    }
-    else if (header.indexOf("GET /pump1/on") >= 0)
-    {
-        Serial.println(" Pump1 on");
-        Pump1State = 1;
-        digitalWrite(PUMP1, HIGH);
-    }
-    else if (header.indexOf("GET /pump1/off") >= 0)
-    {
-        Serial.println("Pump1 off");
-        Pump1State = 0;
-        digitalWrite(PUMP1, LOW);
-    }
-    else if (header.indexOf("GET /pump2/on") >= 0)
-    {
-        Serial.println(" Pump2 on");
-        Pump2State = 1;
-        digitalWrite(PUMP2, HIGH);
-    }
-    else if (header.indexOf("GET /pump2/off") >= 0)
-    {
-        Serial.println(" Pump2 off");
-        Pump2State = 0;
-        digitalWrite(PUMP2, LOW);
-    }
-     else if (header.indexOf("GET /filter/on") >= 0)
-    {
-        Serial.println(" Filter on");
-        FilterState = 1;
-        digitalWrite(FILTER, HIGH);
-    }
-    else if (header.indexOf("GET /filter/off") >= 0)
-    {
-        Serial.println(" filter off");
-        FilterState = 0;
-        digitalWrite(FILTER, LOW);
+        sprintf(DebugBuffer, "switched port %d %s", DPort, SwitchOff ? "Off" : "On");
+        Serial.println(DebugBuffer);
+
+        digitalWrite(DPort, ! SwitchOff);
     }
 }
 
@@ -177,7 +164,6 @@ void HandleSensors()
 {
     unsigned int            t;
 
-    Serial.println("2222222");
     double AnalogValue = analogRead(A0);
     // convert the analog signal to voltage
     // the ESP2866 A0 reads between 0 and ~3 volts, producing a corresponding value
@@ -186,9 +172,37 @@ void HandleSensors()
     Serial.println(AnalogVolts);
     Temperature = (AnalogVolts)*100; //converting from 10 mv per degree wit 500 mV offset
                                      //to degrees ((voltage - 500mV) times 100)
+    Serial.print("the temperature ");
+    Serial.println(Temperature);
 
     StoreTargetTemp(Temperature);
 
+}
+
+void
+DisplayButton(
+    WiFiClient              client,
+    String                  Name,
+    const unsigned int      IsOn
+    )
+{
+    String                  Text = "<a href=\"/";
+    char                    TextBuffer[0x100];
+
+//    sprintf(TextBuffer, "<a href=\"/%s/%s \"><button class=\"button\">%s<br>%s</button></a>", Name, IsOn? "off": "on", Name, IsOn? "AUS": "EIN" )
+    Text += Name;
+    Text += "/";
+    Text += IsOn? "off": "on";
+    Text += "\"><button class=\"button";
+    Text += IsOn? " button2": "";
+    Text += "\">";
+    Text += Name;
+    Text += "<br>";
+    Text += IsOn? "AUS": "EIN";
+    Text += "</button></a>";
+
+    Serial.println(Text);
+    client.println(Text);
 }
 
 /* ----------------------------------- ----------------------------------- */
@@ -211,93 +225,61 @@ void HandleForm(
     client.println("<link rel=\"icon\" href=\"data:,\">");
     // Es folgen der CSS-Code um die Ein/Aus Buttons zu gestalten
     // Hier können Sie die Hintergrundfarge (background-color) und Schriftgröße (font-size) anpassen
-    client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
-    client.println("div.table { display: table; width: auto; margin: auto; padding: 5px;}");
-    client.println("div.spalte { display: table-cell; border: none; width: 200px; padding: 5px; }");
-    client.println(".button { background-color: #b7263b ; color: white; padding: 16px 40px;");
-    client.println("text-decoration: none; font-size: 25px; margin: 2px; cursor: pointer;}");
-    client.println(".button2 {background-color:  #26b72c;}</style></head>");
+    client.println("<style>html { font-family: Verdana; display: inline-block; margin: 0px auto; text-align: center; background-color: #474747}");
+    client.println(".heading { Background-color: #2F9599; padding: 2px; margin: 5px auto;}");
+    client.println("div.table { display: table; width: auto; margin: 20px auto;}");
+    client.println("div.spalte { display: table-cell; width: 49% }");
+    client.println(".button { background-color: #F26B38; width: 190px; height: 130px; margin: 5% 10px; border: none; color: white;");
+    client.println("text-decoration: none; font-size: 32px; cursor: pointer;}");
+    client.println(".button2 {background-color:  #2F9599;}</style></head>");
 
     // Webseiten-Überschrift
-    client.print("<body><h1>");
+    client.print("<body>");
+    client.println("<div class='heading'>");
+    client.println("<h1>");
     client.print(SWNAME);
     client.print(" ");
     client.print(VERSION);
     client.println("</h1>");
 
-    client.print("<h3>Aktuelle Wassertemp.: ");
+    client.print("<p>Aktuelle Wassertemp.: ");
     client.print(Temperature);
-    client.println(" &deg;C</h3>");
+    client.println(" &deg;C</p>");
 
-    client.print("<p><h3>Zieltemp.: &deg;C</h3>");
+    client.print("<p>Zieltemp.: &deg;C</br>");
     client.print("<input type='range' name='TEMPERATURE' min='20' max='40' value='15'>");
     client.println("</p>");
+    client.println("</div>");
 
     /* ------------------------------- Row 1 ------------------------------- */
     client.println("<div class='table'>");
     client.println("<div class='table-row'>");
     client.println("<div class='spalte'>");
-        if (0 == FilterState)
-        {
-            client.println("<a href=\"/filter/on\"><button class=\"button\">Filter<br>EIN</button></a>");
-        }
-        else
-        {
-            client.println("<a href=\"/filter/off\"><button class=\"button button2\">Filter<br>AUS</button></a>");
-        }
+
+        DisplayButton(client, TXT_FILTER, FilterState);
     client.print("</div><div class='spalte'>");
-        if (0 == Pump1State)
-        {
-            client.println("<p><a href=\"/pump1/on\"><button class=\"button\">Pumpe1<br>EIN</button></a></p>");
-        }
-        else
-        {
-            client.println("<p><a href=\"/pump1/off\"><button class=\"button button2\">Pumpe1<br>AUS</button></a></p>");
-        }
+        DisplayButton(client, TXT_PUMP1, Pump1State);
+
     client.println("</div></div>");
 
     /* ------------------------------- Row 2 ------------------------------- */
     client.print("<div class='table-row'>");
     client.print("<div class='spalte'>");
-        if (0 == LampState)
-        {
-            client.println("<p><a href=\"/lamp/on\"><button class=\"button\">Licht<br>EIN</button></a></p>");
-        }
-        else
-        {
-            client.println("<p><a href=\"/lamp/off\"><button class=\"button button2\">Licht<br>AUS</button></a></p>");
-        }
+
+        DisplayButton(client, TXT_LIGHT, LightState);
     client.print("</div><div class='spalte'>");
-        if (0 == Pump2State)
-        {
-            client.println("<p><a href=\"/pump2/on\"><button class=\"button\">Pumpe2<br>EIN</button></a></p>");
-        }
-        else
-        {
-            client.println("<p><a href=\"/pump2/off\"><button class=\"button button2\">Pumpe2<br>AUS</button></a></p>");
-        }
+        DisplayButton(client, TXT_PUMP2, Pump2State);
+        
     client.println("</div></div>");
 
     /* ------------------------------- Row 3 ------------------------------- */
     client.print("<div class='table-row'>");
     client.print("<div class='spalte'>");
-        if (0 == AirState)
-        {
-            client.println("<p><a href=\"/air/on\"><button class=\"button\">Luft<br>EIN</button></a></p>");
-        }
-        else
-        {
-            client.println("<p><a href=\"/air/off\"><button class=\"button button2\">Luft<br>AUS</button></a></p>");
-        }
+    
+        DisplayButton(client, TXT_AIR, AirState);
     client.print("</div><div class='spalte'>");
-        if (HeatingState == 0)
-        {
-            client.println("<p><a href=\"/heat/on\"><button class=\"button\">Heizung<br>EIN</button></a></p>");
-        }
-        else
-        {
-            client.println("<p><a href=\"/heat/off\"><button class=\"button button2\">Heizung<br>AUS</button></a></p>");
-        }
+        DisplayButton(client, TXT_HEATING, HeatingState);
+        
     client.println("</div></div>");
 
     client.println("</div>");
@@ -316,12 +298,12 @@ ShowWaterTemp(
     Serial.print(Temperature);
     Serial.println(" C");
 
-    Lcd.setCursor(3,0);
-    Lcd.print("Water temp.:");
-    Lcd.setCursor(5,1);
-    Lcd.print(Temperature);
-    Lcd.setCursor(10,1);
-    Lcd.print((char)223);
-    Lcd.print("C");
+    // Lcd.setCursor(3,0);
+    // Lcd.print("Water temp.:");
+    // Lcd.setCursor(5,1);
+    // Lcd.print(Temperature);
+    // Lcd.setCursor(10,1);
+    // Lcd.print((char)223);
+    // Lcd.print("C");
 }
     

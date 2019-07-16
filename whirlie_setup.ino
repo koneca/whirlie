@@ -3,29 +3,29 @@ int
 InitializeData()
 {
   HeatingState = 0;
-  LampState = 0;
+  LightState = 0;
   Pump1State = 0;
   Pump2State = 0;
   AirState = 0;
   Timer = 0;
 
-  digitalWrite(HEATING, HeatingState);
-  digitalWrite(LAMP, LampState);
-  digitalWrite(PUMP1, Pump1State);
-  digitalWrite(PUMP2, HeatingState);
-  digitalWrite(AIR, Pump2State);
-  digitalWrite(FILTER, FilterState);
+  digitalWrite(DHEATING, HeatingState);
+  digitalWrite(DLAMP, LightState);
+  digitalWrite(DPUMP1, Pump1State);
+  digitalWrite(DPUMP2, HeatingState);
+  digitalWrite(DAIR, Pump2State);
+  digitalWrite(DFILTER, FilterState);
 }
 
 int
 SetupPorts()
 {
-  pinMode(HEATING, OUTPUT);
-  pinMode(LAMP, OUTPUT);
-  pinMode(PUMP1, OUTPUT);
-  pinMode(PUMP2, OUTPUT);
-  pinMode(AIR, OUTPUT);
-  pinMode(FILTER, OUTPUT);
+  pinMode(DHEATING, OUTPUT);
+  pinMode(DLAMP, OUTPUT);
+  pinMode(DPUMP1, OUTPUT);
+  pinMode(DPUMP2, OUTPUT);
+  pinMode(DAIR, OUTPUT);
+  pinMode(DFILTER, OUTPUT);
 
   //  pinMode(HeatBtn, INPUT);
   //  pinMode(LampBtn, INPUT);

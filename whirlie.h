@@ -6,17 +6,17 @@
 
 //SW Version
 #define SWNAME "Whirlie-Control"
-#define VERSION "0.2"
+#define VERSION "0.3"
 
 #define PERMSTORE   0
 
 // Portsdefinition
-#define HEATING     2  //D4
-#define AIR         5  //D1
-#define PUMP1       4  //D2
-#define PUMP2       0  //D3
-#define FILTER      13 //D7
-#define LAMP        12 //D6 
+#define DHEATING     2  //D4
+#define DAIR         5  //D1
+#define DPUMP1       4  //D2
+#define DPUMP2       0  //D3
+#define DFILTER      13 //D7
+#define DLAMP        12 //D6 
 
 // Butondefinition
 #define HEATBTN     7
@@ -27,10 +27,18 @@
 
 #define A0          1
 
+// Textdefinitions
+#define TXT_HEATING "Heizung"
+#define TXT_PUMP1   "Pumpe1"
+#define TXT_PUMP2   "Pumpe2"
+#define TXT_AIR     "Blubber"
+#define TXT_LIGHT   "Licht"
+#define TXT_FILTER  "Filter"
+
 /* ----------------------------------- ----------------------------------- */
 
 int HeatingState;
-int LampState;
+int LightState;
 int Pump1State;
 int Pump2State;
 int FilterState;
