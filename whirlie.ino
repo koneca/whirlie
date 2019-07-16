@@ -5,6 +5,8 @@ WiFiServer          Server(80);
 
 void setup()
 {
+    SetupPorts();
+    InitializeData();
     Serial.begin(115200);
 
     Serial.print("Starting ");
@@ -26,8 +28,7 @@ void setup()
     // InitializeDisplay();
     // Serial.println("Display started");
 
-    SetupPorts();
-    InitializeData();
+
 }
 
 /* ------------------------------- Main loop ------------------------------- */
