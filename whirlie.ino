@@ -19,6 +19,7 @@ void setup()
         Serial.println("Ready");
     }
 
+    HostIp = WiFi.localIP().toString();
     Server.begin();
 
     // Serial.println("Statring Display");
@@ -48,7 +49,7 @@ void loop()
             if (Client.available())
             {                           // Fall ein Byte zum lesen da ist,
                 char c = Client.read(); // lese das Byte, und dann
-                Serial.write(c);        // gebe es auf dem seriellen Monitor aus
+                //Serial.write(c);        // gebe es auf dem seriellen Monitor aus
                 header += c;
                 if (c == '\n')
                 { // wenn das Byte eine Neue-Zeile Char ist
@@ -56,9 +57,12 @@ void loop()
                     // dies ist das Ende der HTTP-Anfrage vom Client, also senden wir eine Antwort:
                     if (currentLine.length() == 0)
                     {
-                        HandleSensors();
-                        HandleBrowserIO();
-                        HandleForm(Client);
+  
+                            HandleSensors();
+                            HandleBrowserIO(Client);
+                            HandleForm(Client);
+                 
+                        
                         // und wir verlassen mit einem break die Schleife
                         break;
                     }
@@ -77,75 +81,113 @@ void loop()
         header = "";
         // Die Verbindung schließen
         Client.stop();
-        Serial.println("Client getrennt.");
+        Serial.println("Client disconnected.");
         Serial.println("");
     }
     delay(1000);
 }
 
 /* ----------------------------------- ----------------------------------- */
-void HandleBrowserIO()
+void
+HandleSlider(
+    String                  PostData
+)
+{
+    unsigned int            Position = 0;
+
+    if(0 <= PostData.indexOf("TargetTemp"))
+    {
+        Position = PostData.indexOf("=");
+        TargetTemp = PostData.substring(++Position).toInt();
+        Serial.println(TargetTemp);
+    }
+}
+
+void
+HandleForm()
 {
     bool                     SwitchOff = false;
     unsigned int             DPort = 0;
     bool                     PortSwitched = false;
     char                     DebugBuffer[100];
 
-    if(0 <= header.indexOf("GET /"))
+    Serial.println("got an get");
+    // switched off (off because "on" is too short)
+    if(0 <= header.indexOf("off"))
     {
-        Serial.println("got an get");
-        // switched off (off because "on" is too short)
-        if(0 <= header.indexOf("off"))
-        {
-            SwitchOff = true;
-        }
-
-        if (header.indexOf(TXT_HEATING) >= 0)
-        {
-            HeatingState = ! SwitchOff;
-            DPort = DHEATING;
-            PortSwitched = true;
-        }
-
-        else if (header.indexOf(TXT_LIGHT) >= 0)
-        {
-            LightState = ! SwitchOff;
-            DPort = DLAMP;
-            PortSwitched = true;
-        }
-        else if (header.indexOf(TXT_AIR) >= 0)
-        {
-            AirState = ! SwitchOff;
-            DPort = DAIR;
-            PortSwitched = true;
-        }
-        else if (header.indexOf(TXT_PUMP1) >= 0)
-        {
-            Pump1State = ! SwitchOff;
-            DPort = DPUMP1;
-            PortSwitched = true;
-        }
-        else if (header.indexOf(TXT_PUMP2) >= 0)
-        {
-            Pump2State = ! SwitchOff;
-            DPort = DPUMP2;
-            PortSwitched = true;
-        }
-        else if (header.indexOf(TXT_FILTER) >= 0)
-        {
-            FilterState = ! SwitchOff;
-            DPort = DFILTER;
-            PortSwitched = true;
-        }
+        SwitchOff = true;
     }
 
-    if(PortSwitched)
+    if (header.indexOf(TXT_HEATING) >= 0)
+    {
+        HeatingState = ! SwitchOff;
+        DPort = DHEATING;
+        PortSwitched = true;
+    }
+
+    else if (header.indexOf(TXT_LIGHT) >= 0)
+    {
+        LightState = ! SwitchOff;
+        DPort = DLAMP;
+        PortSwitched = true;
+    }
+    else if (header.indexOf(TXT_AIR) >= 0)
+    {
+        AirState = ! SwitchOff;
+        DPort = DAIR;
+        PortSwitched = true;
+    }
+    else if (header.indexOf(TXT_PUMP1) >= 0)
+    {
+        Pump1State = ! SwitchOff;
+        DPort = DPUMP1;
+        PortSwitched = true;
+    }
+    else if (header.indexOf(TXT_PUMP2) >= 0)
+    {
+        Pump2State = ! SwitchOff;
+        DPort = DPUMP2;
+        PortSwitched = true;
+    }
+    else if (header.indexOf(TXT_FILTER) >= 0)
+    {
+        FilterState = ! SwitchOff;
+        DPort = DFILTER;
+        PortSwitched = true;
+    }
+
+        if(PortSwitched)
     {
         sprintf(DebugBuffer, "switched port %d %s", DPort, SwitchOff ? "Off" : "On");
         Serial.println(DebugBuffer);
 
         digitalWrite(DPort, ! SwitchOff);
     }
+}
+/* ----------------------------------- ----------------------------------- */
+void HandleBrowserIO(
+    WiFiClient              Client
+    )
+{
+    String                  PostData = "";
+    char                    c;
+    
+    Serial.println(header);
+    if(0 <= header.indexOf("GET /"))
+    {
+        HandleForm();
+    }
+    else if(0 <= header.indexOf("POST /"))
+    {
+        Serial.println("got an post");
+        while (Client.available())
+        {
+             c = Client.read();
+             PostData += c;
+        }
+        HandleSlider(PostData);
+    }
+
 }
 
 /* ----------------------------------- ----------------------------------- */
@@ -175,7 +217,7 @@ void HandleSensors()
     Serial.print("the temperature ");
     Serial.println(Temperature);
 
-    StoreTargetTemp(Temperature);
+    //StoreTargetTemp(Temperature);
 
 }
 
@@ -201,7 +243,6 @@ DisplayButton(
     Text += IsOn? "AUS": "EIN";
     Text += "</button></a>";
 
-    Serial.println(Text);
     client.println(Text);
 }
 
@@ -226,12 +267,20 @@ void HandleForm(
     // Es folgen der CSS-Code um die Ein/Aus Buttons zu gestalten
     // Hier können Sie die Hintergrundfarge (background-color) und Schriftgröße (font-size) anpassen
     client.println("<style>html { font-family: Verdana; display: inline-block; margin: 0px auto; text-align: center; background-color: #474747}");
-    client.println(".heading { Background-color: #2F9599; padding: 2px; margin: 5px auto;}");
+    client.println(".heading { Background-color: #3FA5A9; padding: 2px; margin: 5px auto;}");
     client.println("div.table { display: table; width: auto; margin: 20px auto;}");
     client.println("div.spalte { display: table-cell; width: 49% }");
     client.println(".button { background-color: #F26B38; width: 190px; height: 130px; margin: 5% 10px; border: none; color: white;");
     client.println("text-decoration: none; font-size: 32px; cursor: pointer;}");
-    client.println(".button2 {background-color:  #2F9599;}</style></head>");
+    client.println(".button2 {background-color:  #2F9599;}</style>");
+    client.print("<script>function sendPosition(slider, value) { console.log(slider+': '+value);  var request = new XMLHttpRequest();  request.open('POST', 'http://");
+    client.print(HostIp);
+    client.println("/');");
+    client.println("request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); request.send('TargetTemp'+'='+value);");
+    client.println("setTimeout(location.reload(), 100); }");
+    client.println("</script>");
+    
+    client.println("</head>");
 
     // Webseiten-Überschrift
     client.print("<body>");
@@ -246,8 +295,12 @@ void HandleForm(
     client.print(Temperature);
     client.println(" &deg;C</p>");
 
-    client.print("<p>Zieltemp.: &deg;C</br>");
-    client.print("<input type='range' name='TEMPERATURE' min='20' max='40' value='15'>");
+    client.print("<p>Zieltemp.: ");
+    client.print(TargetTemp);
+    client.print(".0 &deg;C</br>");
+    client.print("<input type='range' id='TempSlider' min='20' max='40' value='");
+    client.print(TargetTemp);
+    client.print("' onchange='sendPosition(this.id, this.value);'>");
     client.println("</p>");
     client.println("</div>");
 

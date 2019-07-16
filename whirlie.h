@@ -46,7 +46,8 @@ int AirState;
 String header;
 int Timer;
 float Temperature;
-float TargetTemp;
+int TargetTemp;
+String HostIp;
 
 void HandleForm(WiFiClient client);
 void HandleSensors();
