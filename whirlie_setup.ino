@@ -1,3 +1,4 @@
+// whirlie_setup.ino
 
 int
 InitializeData()
@@ -17,6 +18,7 @@ InitializeData()
   digitalWrite(DFILTER, FilterState);
 }
 
+/* ----------------------------------- ----------------------------------- */
 int
 SetupPorts()
 {
@@ -34,6 +36,7 @@ SetupPorts()
   //  pinMode(AirBtn, INPUT);
 }
 
+/* ----------------------------------- ----------------------------------- */
 void
 InitializeDisplay()
 {
@@ -58,5 +61,3 @@ InitializeDisplay()
 
     delay(2000);
 }
-
-

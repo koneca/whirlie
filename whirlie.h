@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager
-#include <LiquidCrystal_I2C.h>
+//#include <LiquidCrystal_I2C.h>
 #include <EEPROM.h>
 
 //SW Version
@@ -49,9 +49,11 @@ float Temperature;
 int TargetTemp;
 String HostIp;
 
-void HandleForm(WiFiClient client);
-void HandleSensors();
-void HandleBrowserIO();
+void
+HandleSensors();
+
+void
+HandleBrowserIO();
 
 struct StoreStruct {
     float fliesskommazahl;
@@ -66,10 +68,21 @@ InitializeData();
 int
 SetupPorts();
 
+void ShowForm(
+    WiFiClient              client
+    );
+
 void
 InitializeDisplay();
 
 void
 ShowWaterTemp(
     const float             Temperature
+    );
+
+void
+DisplayButton(
+    WiFiClient              client,
+    String                  Name,
+    const unsigned int      IsOn
     );
