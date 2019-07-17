@@ -46,7 +46,7 @@ int AirState;
 String header;
 int Timer;
 float Temperature;
-int TargetTemp;
+byte TargetTemp;
 String HostIp;
 
 void
@@ -55,10 +55,13 @@ HandleSensors();
 void
 HandleBrowserIO();
 
-struct StoreStruct {
-    float fliesskommazahl;
-};
-StoreStruct storage = {1.0};
+// struct StoreStruct {
+//     float fliesskommazahl;
+// };
+// StoreStruct storage = {1.0};
+
+void
+LoadTargetTemp();
 
 
 /* ----------------------------------- ----------------------------------- */

@@ -92,10 +92,30 @@ void StoreTargetTemp(
     const float             Temp             
 )
 {
-    EEPROM.begin(sizeof(float));
-    for (unsigned int t=0; t<sizeof(storage); t++)
-		EEPROM.write(PERMSTORE + t, *((char*)&storage + t));
+    Serial.println("storing Target Temp");
+    EEPROM.begin(sizeof(byte));
+    EEPROM.write(PERMSTORE, TargetTemp);
+    // for (unsigned int t=0; t<sizeof(storage); t++)
+	// 	EEPROM.write(PERMSTORE + t, *((char*)&storage + t));
     EEPROM.end();
+}
+
+/* ----------------------------------- ----------------------------------- */
+void HandleSensors()
+{
+    unsigned int            t;
+
+    double AnalogValue = analogRead(A0);
+    // convert the analog signal to voltage
+    // the ESP2866 A0 reads between 0 and ~3 volts, producing a corresponding value
+    // between 0 and 1024. The equation below will convert the value to a voltage value.
+    double AnalogVolts = (AnalogValue * 3.03) / 1024;
+    Serial.println(AnalogVolts);
+    Temperature = (AnalogVolts)*100; //converting from 10 mv per degree wit 500 mV offset
+                                     //to degrees ((voltage - 500mV) times 100)
+    Serial.print("the temperature ");
+    Serial.println(Temperature);
+
 }
 
 /* ----------------------------------- ----------------------------------- */

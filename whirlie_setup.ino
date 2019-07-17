@@ -16,6 +16,8 @@ InitializeData()
   digitalWrite(DPUMP2, HeatingState);
   digitalWrite(DAIR, Pump2State);
   digitalWrite(DFILTER, FilterState);
+
+  LoadTargetTemp();
 }
 
 /* ----------------------------------- ----------------------------------- */
@@ -38,6 +40,17 @@ SetupPorts()
 
 /* ----------------------------------- ----------------------------------- */
 void
+LoadTargetTemp()
+{
+    EEPROM.begin(sizeof(byte));
+    TargetTemp = EEPROM.read(PERMSTORE);
+    EEPROM.end();
+    Serial.print("Got permTargetTemp ");
+    Serial.println(TargetTemp);
+}
+
+/* ----------------------------------- ----------------------------------- */
+void
 InitializeDisplay()
 {
     // Lcd.init();
@@ -50,14 +63,7 @@ InitializeDisplay()
     // Lcd.setCursor(9,1);
     // Lcd.print(VERSION);
 
-    EEPROM.begin(sizeof(float));
-    for (unsigned int t=0; t<sizeof(storage); t++)
-		*((char*)&storage + t) = EEPROM.read(PERMSTORE + t);
-    TargetTemp = storage.fliesskommazahl;
-    EEPROM.end();
-
-    Serial.print("Got permTargetTemp ");
-    Serial.println(TargetTemp);
+    
 
     delay(2000);
 }
