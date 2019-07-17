@@ -1,7 +1,7 @@
 # Whirlie-Control
 Whirlpool-control with wifi.
 
-![Alt text](doc/img/img.jpg?raw=true "Mobile Browser-view")
+![Alt text](https://github.com/koneca/whirlie/raw/master/doc/img/UI.png?raw=true "Mobile Browser-view")
 
 You have an Whirlpool or Jacuzzi with an damaged control unit?
 Or you have an old one without WIFI??????
