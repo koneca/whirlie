@@ -8,7 +8,7 @@
 
 //SW Version
 #define SWNAME "Whirlie-Control"
-#define VERSION "0.3"
+#define VERSION "0.3.3"
 
 #define PERMSTORE   0
 
