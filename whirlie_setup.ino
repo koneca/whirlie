@@ -1,23 +1,59 @@
 // whirlie_setup.ino
 
+void
+ButtonsSetup()
+{
+    Expander.pinMode(BTN_LIGHT, INPUT);
+    Expander.pullUp(BTN_LIGHT, HIGH);
+    Expander.pinMode(BTN_PUMP1, INPUT);
+    Expander.pullUp(BTN_PUMP1, HIGH);
+    Expander.pinMode(BTN_PUMP2, INPUT);
+    Expander.pullUp(BTN_PUMP2, HIGH);
+    Expander.pinMode(BTN_AIR, INPUT);
+    Expander.pullUp(BTN_AIR, HIGH);
+    Expander.pinMode(BTN_FILTER, INPUT);
+    Expander.pullUp(BTN_FILTER, HIGH);
+    Expander.pinMode(BTN_HEATING, INPUT);
+    Expander.pullUp(BTN_HEATING, HIGH);
+
+    Expander.writeGPIOAB(0x0000);
+    PanelState = 0;
+}
+
+void
+LedsSetup()
+{
+    Expander.pinMode(LED_LIGHT,     OUTPUT);
+    Expander.pinMode(LED_PUMP1,     OUTPUT);
+    Expander.pinMode(LED_PUMP2,     OUTPUT);
+    Expander.pinMode(LED_AIR,       OUTPUT);
+    Expander.pinMode(LED_FILTER,    OUTPUT);
+    Expander.pinMode(LED_HEATING,   OUTPUT);
+}
+
 int
 InitializeData()
 {
-  HeatingState = 0;
-  LightState = 0;
-  Pump1State = 0;
-  Pump2State = 0;
-  AirState = 0;
-  Timer = 0;
+    HeatingState = 0;
+    LightState = 0;
+    Pump1State = 0;
+    Pump2State = 0;
+    AirState = 0;
+    Timer = 0;
 
-  digitalWrite(DHEATING, HeatingState);
-  digitalWrite(DLAMP, LightState);
-  digitalWrite(DPUMP1, Pump1State);
-  digitalWrite(DPUMP2, HeatingState);
-  digitalWrite(DAIR, Pump2State);
-  digitalWrite(DFILTER, FilterState);
+    digitalWrite(DHEATING, HeatingState);
+    digitalWrite(DLAMP, LightState);
+    digitalWrite(DPUMP1, Pump1State);
+    digitalWrite(DPUMP2, HeatingState);
+    digitalWrite(DAIR, Pump2State);
+    digitalWrite(DFILTER, FilterState);
 
-  LoadTargetTemp();
+    ButtonsSetup();
+    LedsSetup();
+
+
+
+    LoadTargetTemp();
 }
 
 /* ----------------------------------- ----------------------------------- */

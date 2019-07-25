@@ -5,9 +5,11 @@
 
 //LiquidCrystal_I2C   Lcd(0x27,20,4);
 WiFiServer          Server(80);
+Adafruit_MCP23017   Expander;
 
 void setup()
 {
+    Expander.begin();
     SetupPorts();
     InitializeData();
     Serial.begin(115200);
@@ -85,7 +87,49 @@ void loop()
         Serial.println("Client disconnected.");
         Serial.println("");
     }
+    else
+    {
+        ToggleControlPanel();
+    }
+    
     delay(1000);
+}
+
+void
+ToggleControlPanel()
+{
+    uint16_t    PanelStateRead = 0;
+    uint16_t    BtnState = 0;
+    uint16_t    NewState = 0;
+    
+    PanelStateRead = Expander.readGPIOAB();
+    //ignore unised ports
+    PanelStateRead &= INPUT_MASK;
+
+    //Button Pressed
+    if(0 != PanelStateRead)
+    {
+        // bitswitch to Outputmask
+        BtnState = (0x00FF & PanelStateRead) << 8;
+        BtnState &= OUTPUT_MASK;
+
+        //Toggle ports, changed
+        NewState = BtnState ^ PanelState;
+
+        Expander.writeGPIOAB(NewState);
+        PanelState = NewState;
+    }
+
+    if(PanelStateRead)
+    {
+        //write all because we don't know if Mobile App switched one port
+        digitalWrite(DHEATING,  PanelState & BTN_HEATING ? 1 : 0);
+        digitalWrite(DAIR,      PanelState & BTN_AIR    ? 1 : 0);
+        digitalWrite(DPUMP1,    PanelState & BTN_PUMP1  ? 1 : 0);
+        digitalWrite(DPUMP2,    PanelState & BTN_PUMP2  ? 1 : 0);
+        digitalWrite(DFILTER,   PanelState & BTN_FILTER ? 1 : 0);
+        digitalWrite(DLAMP,     PanelState & BTN_LIGHT  ? 1 : 0);
+    }
 }
 
 /* ----------------------------------- ----------------------------------- */
