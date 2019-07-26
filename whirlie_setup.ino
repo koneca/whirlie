@@ -40,6 +40,7 @@ InitializeData()
     Pump2State = 0;
     AirState = 0;
     Timer = 0;
+    StateChangedByBrowser = false;
 
     digitalWrite(DHEATING, HeatingState);
     digitalWrite(DLAMP, LightState);

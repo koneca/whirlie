@@ -60,6 +60,8 @@ float Temperature;
 byte TargetTemp;
 String HostIp;
 
+bool StateChangedByBrowser;
+
 uint16_t    PanelState;
 
 void

@@ -91,6 +91,7 @@ HandleForm()
         HeatingState = ! SwitchOff;
         DPort = DHEATING;
         PortSwitched = true;
+        PanelState ^= 1UL << BTN_HEATING;
     }
 
     else if (header.indexOf(TXT_LIGHT) >= 0)
@@ -98,36 +99,42 @@ HandleForm()
         LightState = ! SwitchOff;
         DPort = DLAMP;
         PortSwitched = true;
+        PanelState ^= 1UL << BTN_LAMP;
     }
     else if (header.indexOf(TXT_AIR) >= 0)
     {
         AirState = ! SwitchOff;
         DPort = DAIR;
         PortSwitched = true;
+        PanelState ^= 1UL << BTN_AIR;
     }
     else if (header.indexOf(TXT_PUMP1) >= 0)
     {
         Pump1State = ! SwitchOff;
         DPort = DPUMP1;
         PortSwitched = true;
+        PanelState ^= 1UL << BTN_PUMP1;
     }
     else if (header.indexOf(TXT_PUMP2) >= 0)
     {
         Pump2State = ! SwitchOff;
         DPort = DPUMP2;
         PortSwitched = true;
+        PanelState ^= 1UL << BTN_PUMP2;
     }
     else if (header.indexOf(TXT_FILTER) >= 0)
     {
         FilterState = ! SwitchOff;
         DPort = DFILTER;
         PortSwitched = true;
+        PanelState ^= 1UL << BTN_FILTER;
     }
 
         if(PortSwitched)
     {
         sprintf(DebugBuffer, "switched port %d %s", DPort, SwitchOff ? "Off" : "On");
         Serial.println(DebugBuffer);
+        StateChangedByBrowser = true;
 
         digitalWrite(DPort, ! SwitchOff);
     }

@@ -120,7 +120,7 @@ ToggleControlPanel()
         PanelState = NewState;
     }
 
-    if(PanelStateRead)
+    if(PanelStateRead || StateChangedByBrowser)
     {
         //write all because we don't know if Mobile App switched one port
         digitalWrite(DHEATING,  PanelState & BTN_HEATING ? 1 : 0);
@@ -129,6 +129,15 @@ ToggleControlPanel()
         digitalWrite(DPUMP2,    PanelState & BTN_PUMP2  ? 1 : 0);
         digitalWrite(DFILTER,   PanelState & BTN_FILTER ? 1 : 0);
         digitalWrite(DLAMP,     PanelState & BTN_LIGHT  ? 1 : 0);
+
+        // clean up here
+        HeatingState = PanelState & BTN_HEATING ? 1 : 0;
+        AirState     = PanelState & BTN_AIR    ? 1 : 0;
+        Pump1State   = PanelState & BTN_PUMP1  ? 1 : 0;
+        Pump2State   = PanelState & BTN_PUMP2  ? 1 : 0;
+        FilterState  = PanelState & BTN_FILTER ? 1 : 0;
+        LightState   = PanelState & BTN_LIGHT  ? 1 : 0;
+
     }
 }
 
